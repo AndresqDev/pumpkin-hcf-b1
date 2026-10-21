@@ -42,6 +42,11 @@ on:
         required: true
         default: 'idle:60,move:120,fight:540'
         type: string
+      hcf_tuning:
+        description: 'Líneas TOML extra bajo [hcf] (solo para ablaciones)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -53,6 +58,7 @@ concurrency:
 env:
   HCF: ${{ inputs.hcf }}
   HCF_COLLISIONS: ${{ inputs.collisions }}
+  HCF_TUNING: ${{ inputs.hcf_tuning }}
   BOTS: ${{ inputs.bots }}
   MINUTES: ${{ inputs.minutes }}
   PHASES: ${{ inputs.phases }}
@@ -103,6 +109,10 @@ jobs:
               # Control A/B: mismo workload de colisiones que hcf=false,
               # manteniendo fast paths y sistemas HCF desactivados.
               printf 'player_player_collisions = true\nplayer_mob_collisions = true\n' >> server/pumpkin.toml
+            fi
+            if [ -n "${HCF_TUNING:-}" ]; then
+              # Ablaciones puntuales; no se usa en la matriz principal.
+              printf '%s\n' "${HCF_TUNING}" >> server/pumpkin.toml
             fi
           else
             printf '\n[hcf]\nenabled = false\n' >> server/pumpkin.toml
