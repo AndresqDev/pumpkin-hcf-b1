@@ -301,17 +301,33 @@ function createBot(index, attempt = 0) {
       if (st.mode === 'join') return;
     }
 
+    // Un jugador expulsado puede seguir un instante en bot.entities; si otro
+    // bot le manda un ataque, Pumpkin cierra la conexion por
+    // invalid_entity_attacked y se retroalimenta el churn. La fuente
+    // autoritativa para atacar es la entidad de bot.players, no la lista de
+    // entidades historica. Ademas podamos las entidades huerfanas.
+    for (const [id, e] of Object.entries(bot.entities)) {
+      if (!e || !e.username || !e.username.startsWith(cfg.prefix)) continue;
+      const known = bot.players[e.username];
+      if (!known || !known.entity || known.entity.id !== e.id) {
+        delete bot.entities[id];
+      }
+    }
+
     let best = null;
     let bestDist = Infinity;
     for (const e of Object.values(bot.entities)) {
       if (!e || e === bot.entity) continue;
       if (!e.username || !e.username.startsWith(cfg.prefix)) continue;
-      if (e.isValid === false) continue;
-      if (e.health !== undefined && e.health <= 0) continue;
-      const d = e.position.distanceTo(pos);
+      const known = bot.players[e.username];
+      const target = known && known.entity;
+      if (!target || target.id !== e.id) continue;
+      if (target.isValid === false) continue;
+      if (target.health !== undefined && target.health <= 0) continue;
+      const d = target.position.distanceTo(pos);
       if (d < bestDist) {
         bestDist = d;
-        best = e;
+        best = target;
       }
     }
 
