@@ -152,12 +152,14 @@ jobs:
           rcon "forceload remove all"
 
           # B21 usaba proteccion PvP para sostener los bots. Aqui damos
-          # resistencia 255 refrescada cada 5 s: los ataques siguen pasando
-          # por el core, pero no hay muertes ni objetivos invalidos.
+          # resistencia infinita con amplificador 4 (100% de reduccion): los
+          # ataques siguen pasando por el core, pero no hay muertes ni
+          # objetivos invalidos. No usar 255: `(amplifier + 1) * 5` desborda
+          # u8 y en release deja la reduccion en cero.
           (
             while true; do
               python3 ../loadtest/rcon.py \
-                "effect give @a resistance 30 255 true" \
+                "effect give @a resistance infinite 4 true" \
                 lazarus-test 127.0.0.1 25575 >/dev/null 2>&1 || true
               sleep 5
             done
