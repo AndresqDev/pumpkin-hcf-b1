@@ -100,6 +100,9 @@ jobs:
           # produccion.
           sed -i 's/^max_packet_rate = .*/max_packet_rate = 5000.0/' server/pumpkin.toml
           sed -i 's/^burst_capacity = .*/burst_capacity = 5000.0/' server/pumpkin.toml
+          # En HCF las zonas las gobierna el plugin; la proteccion de spawn
+          # vanilla ademas manda build.spawn_protection sin traducir a 1.8.
+          sed -i 's/^spawn_protection = .*/spawn_protection = 0/' server/pumpkin.toml
           echo '--- HCF config ---'
           tail -5 server/pumpkin.toml
           echo '--- CPU del runner (pumpkin) ---'
@@ -143,11 +146,19 @@ jobs:
           }
           rcon "gamerule doDaylightCycle false"
           rcon "gamerule doWeatherCycle false"
+          rcon "gamerule doMobSpawning false"
+          rcon "difficulty peaceful"
           rcon "time set day"
           rcon "weather clear"
           rcon "forceload add 5 5 8 8"
           rcon "fill 80 99 80 120 99 120 minecraft:stone"
           rcon "fill 80 100 80 120 110 120 minecraft:air"
+          # Muros: con hcf=false las colisiones jugador-jugador empujan a los
+          # bots fuera de la plataforma y acababan cayendo al vacio.
+          rcon "fill 79 100 79 79 110 121 minecraft:barrier"
+          rcon "fill 121 100 79 121 110 121 minecraft:barrier"
+          rcon "fill 79 100 79 121 110 79 minecraft:barrier"
+          rcon "fill 79 100 121 121 110 121 minecraft:barrier"
           rcon "setworldspawn 100 100 100"
           rcon "forceload remove all"
 
@@ -462,6 +473,9 @@ jobs:
           BOT_SECS=$(( (MINUTES - 2) * 60 ))
           if [ "$BOT_SECS" -lt 60 ]; then BOT_SECS=60; fi
           echo "BOT_SECS=${BOT_SECS} (${MINUTES} min de pila)"
+          # Escalonar shards y separar logins evita el rate-limit de Velocity
+          # ("You are logging in too fast") al arrancar los 100 bots.
+          sleep $(( ${{ matrix.shard }} * 5 ))
           node shard.js \
             --host "$PROXY_IP" \
             --port 25565 \
@@ -469,7 +483,7 @@ jobs:
             --startIndex "${{ steps.calc.outputs.start }}" \
             --shard "${{ matrix.shard }}" \
             --workers 4 \
-            --joinSpacing 900 \
+            --joinSpacing 2500 \
             --duration "$BOT_SECS" \
             --phases "$PHASES" \
             --arenaX 100 \

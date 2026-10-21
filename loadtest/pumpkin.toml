@@ -21,7 +21,9 @@ allow_chat_reports = false
 white_list = false
 enforce_whitelist = false
 accepts_transfers = true
-spawn_protection = 16
+# El plugin HCF gobierna safezone/warzone; la proteccion vanilla solo manda
+# la clave cruda build.spawn_protection a clientes 1.8 y estorba al test.
+spawn_protection = 0
 
 [logging]
 enabled = true
