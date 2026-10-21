@@ -19,6 +19,14 @@ on:
         options:
           - 'true'
           - 'false'
+      collisions:
+        description: 'Mantener colisiones vanilla con HCF (control A/B)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
       bots:
         description: 'Total de bots (4 shards)'
         required: true
@@ -44,6 +52,7 @@ concurrency:
 
 env:
   HCF: ${{ inputs.hcf }}
+  HCF_COLLISIONS: ${{ inputs.collisions }}
   BOTS: ${{ inputs.bots }}
   MINUTES: ${{ inputs.minutes }}
   PHASES: ${{ inputs.phases }}
@@ -90,6 +99,11 @@ jobs:
           cp loadtest/pumpkin.toml server/pumpkin.toml
           if [ "${HCF}" = "true" ]; then
             printf '\n[hcf]\nenabled = true\nprofile = "hcf-1.8"\n' >> server/pumpkin.toml
+            if [ "${HCF_COLLISIONS}" = "true" ]; then
+              # Control A/B: mismo workload de colisiones que hcf=false,
+              # manteniendo fast paths y sistemas HCF desactivados.
+              printf 'player_player_collisions = true\nplayer_mob_collisions = true\n' >> server/pumpkin.toml
+            fi
           else
             printf '\n[hcf]\nenabled = false\n' >> server/pumpkin.toml
           fi
