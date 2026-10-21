@@ -101,6 +101,9 @@ function spawnWorker(i) {
         arena: { x: cfg.arenaX, z: cfg.arenaZ },
         maxReconnects: cfg.maxReconnects,
         joinSpacing: cfg.joinSpacing,
+        // Los 4 workers de un shard no deben hacer login a la vez: Velocity
+        // aplica rate-limit por IP y expulsaba a varios bots.
+        startDelay: i * 1500,
         phases: cfg.phases,
         t0: cfg.t0,
       }),

@@ -373,10 +373,11 @@ function createBot(index, attempt = 0) {
   bots.push(bot);
 }
 
-// Conectar con una separacion pequena para no saturar ViaProxy de golpe.
+// Conectar con una separacion pequena para no saturar Velocity de golpe.
 const spacing = cfg.joinSpacing || 900;
+const startDelay = cfg.startDelay || 0;
 for (let i = 0; i < cfg.count; i++) {
-  setTimeout(() => createBot(cfg.start + i, 0), i * spacing);
+  setTimeout(() => createBot(cfg.start + i, 0), startDelay + i * spacing);
 }
 
 setInterval(() => {

@@ -145,30 +145,21 @@ jobs:
             python3 ../loadtest/rcon.py "$1" lazarus-test 127.0.0.1 25575 || true
           }
           # Los nombres de gamerule de Pumpkin son snake_case; los nombres
-          # vanilla (doDaylightCycle, etc.) se rechazaban y la arena nunca se
-          # construia.
+          # vanilla (doDaylightCycle, etc.) se rechazaban.
           rcon "gamerule advance_time false"
           rcon "gamerule advance_weather false"
           rcon "gamerule spawn_mobs false"
           rcon "gamerule max_entity_cramming 0"
+          rcon "gamerule fall_damage false"
           rcon "difficulty peaceful"
           rcon "time set day"
           rcon "weather clear"
-          # forceload usa coordenadas de bloque y las convierte a chunk; 5 5 8 8
-          # solo cargaba el chunk [0,0]. Cargamos 64..144 (chunks 4..9) antes
-          # de hacer fill.
-          rcon "forceload add 64 64 144 144"
-          sleep 3
-          # Suelo de 5 capas y muros: con hcf=false las colisiones empujan a
-          # los bots y antes atravesaban la plataforma inexistente.
-          rcon "fill 80 95 80 120 99 120 minecraft:stone"
-          rcon "fill 80 100 80 120 110 120 minecraft:air"
-          rcon "fill 79 100 79 79 110 121 minecraft:barrier"
-          rcon "fill 121 100 79 121 110 121 minecraft:barrier"
-          rcon "fill 79 100 79 121 110 79 minecraft:barrier"
-          rcon "fill 79 100 121 121 110 121 minecraft:barrier"
+          # No construimos plataforma por RCON: forceload de Pumpkin solo
+          # marca chunks activos, no los carga/genera sin un jugador. Los bots
+          # spawnean en 100/100/100, caen al terreno natural y cargan la zona.
+          # fall_damage=false y max_entity_cramming=0 evitan muertes por la
+          # caida inicial y por el amontonamiento de hcf=false.
           rcon "setworldspawn 100 100 100"
-          rcon "forceload remove all"
 
           # B21 usaba proteccion PvP para sostener los bots. Aqui damos
           # resistencia infinita con amplificador 4 (100% de reduccion): los
@@ -483,7 +474,7 @@ jobs:
           echo "BOT_SECS=${BOT_SECS} (${MINUTES} min de pila)"
           # Escalonar shards y separar logins evita el rate-limit de Velocity
           # ("You are logging in too fast") al arrancar los 100 bots.
-          sleep $(( ${{ matrix.shard }} * 5 ))
+          sleep $(( ${{ matrix.shard }} * 5 + 15 ))
           node shard.js \
             --host "$PROXY_IP" \
             --port 25565 \
@@ -491,7 +482,8 @@ jobs:
             --startIndex "${{ steps.calc.outputs.start }}" \
             --shard "${{ matrix.shard }}" \
             --workers 4 \
-            --joinSpacing 2500 \
+            --joinSpacing 4000 \
+            --maxReconnects 30 \
             --duration "$BOT_SECS" \
             --phases "$PHASES" \
             --arenaX 100 \
