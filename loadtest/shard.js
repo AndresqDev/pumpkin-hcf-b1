@@ -63,6 +63,17 @@ const cfg = {
   arenaZ: parseInt(a.arenaZ || '100', 10),
 };
 
+// `--duration` es la ventana total del shard. Si las fases suman menos,
+// extendemos la ultima (normalmente `fight`) para que los bots no se
+// desconecten antes de que termine la medicion.
+const phaseSecs = cfg.phases
+  ? cfg.phases.reduce((x, p) => x + p.secs, 0)
+  : 0;
+const requestedSecs = cfg.warmup + cfg.duration;
+if (cfg.phases && phaseSecs < requestedSecs) {
+  cfg.phases[cfg.phases.length - 1].secs += requestedSecs - phaseSecs;
+}
+
 const startedAt = Date.now();
 const workers = [];
 const lastStats = [];
@@ -132,8 +143,8 @@ const tick = setInterval(() => {
 }, 10000);
 
 const totalTest = cfg.phases
-  ? cfg.phases.reduce((x, p) => x + p.secs, 0)
-  : cfg.warmup + cfg.duration;
+  ? Math.max(cfg.phases.reduce((x, p) => x + p.secs, 0), requestedSecs)
+  : requestedSecs;
 
 function stopAll() {
   clearInterval(tick);

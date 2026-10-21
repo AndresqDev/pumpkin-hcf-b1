@@ -25,14 +25,14 @@ on:
         default: '100'
         type: string
       minutes:
-        description: 'Minutos que la pila queda arriba'
+        description: 'Minutos que la pila queda arriba (los bots usan minutes-2)'
         required: true
-        default: '20'
+        default: '14'
         type: string
       phases:
-        description: 'Fases: idle:30,move:60,fight:120'
+        description: 'Fases; si suman menos que duration, la ultima se extiende'
         required: true
-        default: 'idle:30,move:60,fight:120'
+        default: 'idle:60,move:120,fight:540'
         type: string
 
 permissions:
@@ -457,6 +457,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          BOT_SECS=$(( (MINUTES - 2) * 60 ))
+          if [ "$BOT_SECS" -lt 60 ]; then BOT_SECS=60; fi
+          echo "BOT_SECS=${BOT_SECS} (${MINUTES} min de pila)"
           node shard.js \
             --host "$PROXY_IP" \
             --port 25565 \
@@ -465,6 +468,7 @@ jobs:
             --shard "${{ matrix.shard }}" \
             --workers 4 \
             --joinSpacing 900 \
+            --duration "$BOT_SECS" \
             --phases "$PHASES" \
             --arenaX 100 \
             --arenaZ 100 \
