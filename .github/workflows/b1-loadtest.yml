@@ -144,17 +144,25 @@ jobs:
           rcon() {
             python3 ../loadtest/rcon.py "$1" lazarus-test 127.0.0.1 25575 || true
           }
-          rcon "gamerule doDaylightCycle false"
-          rcon "gamerule doWeatherCycle false"
-          rcon "gamerule doMobSpawning false"
+          # Los nombres de gamerule de Pumpkin son snake_case; los nombres
+          # vanilla (doDaylightCycle, etc.) se rechazaban y la arena nunca se
+          # construia.
+          rcon "gamerule advance_time false"
+          rcon "gamerule advance_weather false"
+          rcon "gamerule spawn_mobs false"
+          rcon "gamerule max_entity_cramming 0"
           rcon "difficulty peaceful"
           rcon "time set day"
           rcon "weather clear"
-          rcon "forceload add 5 5 8 8"
-          rcon "fill 80 99 80 120 99 120 minecraft:stone"
+          # forceload usa coordenadas de bloque y las convierte a chunk; 5 5 8 8
+          # solo cargaba el chunk [0,0]. Cargamos 64..144 (chunks 4..9) antes
+          # de hacer fill.
+          rcon "forceload add 64 64 144 144"
+          sleep 3
+          # Suelo de 5 capas y muros: con hcf=false las colisiones empujan a
+          # los bots y antes atravesaban la plataforma inexistente.
+          rcon "fill 80 95 80 120 99 120 minecraft:stone"
           rcon "fill 80 100 80 120 110 120 minecraft:air"
-          # Muros: con hcf=false las colisiones jugador-jugador empujan a los
-          # bots fuera de la plataforma y acababan cayendo al vacio.
           rcon "fill 79 100 79 79 110 121 minecraft:barrier"
           rcon "fill 121 100 79 121 110 121 minecraft:barrier"
           rcon "fill 79 100 79 121 110 79 minecraft:barrier"
