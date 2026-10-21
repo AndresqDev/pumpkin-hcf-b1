@@ -268,6 +268,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Node 22 para el precalentamiento
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: loadtest/package-lock.json
+
+      - name: Instalar dependencias del prewarm
+        working-directory: loadtest
+        run: npm ci --no-audit --no-fund
+
       - name: Java 21
         uses: actions/setup-java@v4
         with:
@@ -393,6 +404,9 @@ jobs:
             echo "| Plugins | ViaVersion 5.12.1 + ViaBackwards 5.12.1 + ViaRewind 4.2.0 |"
             echo "| HCF | \`${HCF}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+          echo "--- precalentando chunks del spawn ---"
+          node ../loadtest/prewarm.js \
+            --host 127.0.0.1 --port 25565 --seconds 45 || true
           echo "JOIN_READY tcp://${TS_IP}:25565"
 
       - name: Mantener Velocity arriba
