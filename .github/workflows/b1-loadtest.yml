@@ -47,6 +47,14 @@ on:
         required: false
         default: ''
         type: string
+      metrics:
+        description: 'Activar HCF_METRIC (solo diagnósticos; añade overhead)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: read
@@ -59,6 +67,7 @@ env:
   HCF: ${{ inputs.hcf }}
   HCF_COLLISIONS: ${{ inputs.collisions }}
   HCF_TUNING: ${{ inputs.hcf_tuning }}
+  HCF_METRICS: ${{ inputs.metrics }}
   BOTS: ${{ inputs.bots }}
   MINUTES: ${{ inputs.minutes }}
   PHASES: ${{ inputs.phases }}
@@ -105,6 +114,11 @@ jobs:
           cp loadtest/pumpkin.toml server/pumpkin.toml
           if [ "${HCF}" = "true" ]; then
             printf '\n[hcf]\nenabled = true\nprofile = "hcf-1.8"\n' >> server/pumpkin.toml
+            if [ "${HCF_METRICS}" = "true" ]; then
+              # Diagnóstico explícito: los timers/atómicos no se pagan en runs
+              # de rendimiento ni en producción.
+              printf 'metrics = true\n' >> server/pumpkin.toml
+            fi
             if [ "${HCF_COLLISIONS}" = "true" ]; then
               # Control A/B: mismo workload de colisiones que hcf=false,
               # manteniendo fast paths y sistemas HCF desactivados.
