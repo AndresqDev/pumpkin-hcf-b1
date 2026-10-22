@@ -55,6 +55,16 @@ on:
         options:
           - 'false'
           - 'true'
+      binary_tag:
+        description: 'Tag del release con el binario B1'
+        required: true
+        default: 'b1-binary'
+        type: string
+      binary_sha256:
+        description: 'SHA-256 esperado del binario (vacío = no verificar)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -68,6 +78,8 @@ env:
   HCF_COLLISIONS: ${{ inputs.collisions }}
   HCF_TUNING: ${{ inputs.hcf_tuning }}
   HCF_METRICS: ${{ inputs.metrics }}
+  BINARY_TAG: ${{ inputs.binary_tag }}
+  BINARY_SHA256: ${{ inputs.binary_sha256 }}
   BOTS: ${{ inputs.bots }}
   MINUTES: ${{ inputs.minutes }}
   PHASES: ${{ inputs.phases }}
@@ -93,12 +105,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p server
-          gh release download b1-binary \
+          gh release download "${BINARY_TAG}" \
             --repo "${{ github.repository }}" \
             --pattern pumpkin \
             --dir server \
             --clobber
           chmod +x server/pumpkin
+          if [ -n "${BINARY_SHA256:-}" ]; then
+            echo "${BINARY_SHA256}  server/pumpkin" | sha256sum -c -
+          fi
           ls -lh server/pumpkin
           sha256sum server/pumpkin
 
