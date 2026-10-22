@@ -45,6 +45,20 @@ function createBot(index, attempt = 0) {
   });
   bot.loadPlugin(pathfinder);
 
+  // Mineflayer puede conservar la entrada de `bot.players` y la entidad
+  // asociada después de un kick de Via/backend. Si el bot sigue atacando esa
+  // entidad fantasma, Pumpkin cierra la conexión por
+  // `invalid_entity_attacked` y el churn se retroalimenta. `playerLeft` es la
+  // señal autoritativa para olvidar al jugador y su entidad.
+  const forgetPlayer = (name) => {
+    if (!name) return;
+    delete bot.players[name];
+    for (const [id, entity] of Object.entries(bot.entities)) {
+      if (entity && entity.username === name) delete bot.entities[id];
+    }
+  };
+  bot.on('playerLeft', (player) => forgetPlayer(player && player.username));
+
   // Cuenta packets salientes para diagnosticar los kicks del packet_limiter
   // del host (500/s). El top de nombres se imprime al recibir el kick.
   const pktCounts = Object.create(null);
